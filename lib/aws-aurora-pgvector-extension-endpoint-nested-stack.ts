@@ -35,6 +35,7 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
             enableKeyRotation: true,
             rotationPeriod: Duration.days(90),
             description: 'Key for encrypting API authorization secrets',
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
         // Create secret for API authorization encrypted with KMS

@@ -103,7 +103,8 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
             enabled: true,
             enableKeyRotation: true,
             rotationPeriod: Duration.days(90),
-            description: 'Key for encrypting database password,'
+            description: 'Key for encrypting database password',
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
         // Create secret for API authorization encrypted with KMS
