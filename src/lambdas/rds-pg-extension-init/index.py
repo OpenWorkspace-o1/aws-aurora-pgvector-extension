@@ -29,7 +29,7 @@ def _check_database_env_vars():
 
 LOGGER = Logger()
 
-def create_vector_extension(db_engine: Engine) -> None:
+def _create_vector_extension(db_engine: Engine) -> None:
     """Create vector extension in PostgreSQL database with transactional lock"""
     try:
         with db_engine.connect() as conn:
@@ -118,6 +118,6 @@ def handler(event, context):
 
     db_engine = create_engine(url=conn, **{})
 
-    create_vector_extension(db_engine)
+    _create_vector_extension(db_engine)
 
     return {"statusCode": 200, "body": "Successfully created vector extension."}
