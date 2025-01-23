@@ -48,7 +48,7 @@ def create_vector_extension(db_engine: Engine) -> None:
                     ) THEN
 
                         -- Use cluster-wide lock number to prevent concurrent migrations
-                        PERFORM pg_advisory_xact_lock(1573678846307946496);
+                        PERFORM pg_advisory_xact_lock(pg_catalog.hashtext('vector'));
 
                         CREATE EXTENSION IF NOT EXISTS vector;
                         ALTER EXTENSION vector UPDATE;
