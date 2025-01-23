@@ -43,6 +43,7 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
             description: 'API Authorization Secret Key',
             secretStringValue: SecretValue.unsafePlainText(props.apiSecretKey),
             encryptionKey: kmsKey,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
         const lambdaRole = new cdk.aws_iam.Role(this, `${props.resourcePrefix}-apiKeyAuthorizerLambda-Role`, {

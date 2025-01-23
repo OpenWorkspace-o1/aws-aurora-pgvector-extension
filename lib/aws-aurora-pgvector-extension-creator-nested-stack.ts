@@ -112,6 +112,7 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
             description: 'Database Password',
             secretStringValue: SecretValue.unsafePlainText(props.rdsPassword),
             encryptionKey: kmsKey,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
         // Function to initialize the pgvector extension on the RDS instance
