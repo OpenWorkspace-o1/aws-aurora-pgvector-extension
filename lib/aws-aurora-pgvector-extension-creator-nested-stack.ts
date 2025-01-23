@@ -23,7 +23,7 @@ export interface AwsAuroraPgvectorExtensionCreatorNestedStackProps extends Neste
     /** ID of the security group for the Aurora PostgreSQL instance */
     readonly rdsSecGrpId: string;
     /** Architecture of the Aurora PostgreSQL instance */
-    readonly architecture: Architecture;
+    readonly lambdaArchitecture: Architecture;
 }
 
 export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
@@ -90,19 +90,18 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
         const lambdaRole = new cdk.aws_iam.Role(this, `${props.resourcePrefix}-rdsDdlTriggerFn-Role`, {
         assumedBy: new cdk.aws_iam.ServicePrincipal('lambda.amazonaws.com'),
         managedPolicies: [
-            cdk.aws_iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
-            cdk.aws_iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
-        ],
+                cdk.aws_iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+                cdk.aws_iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
+            ],
         });
         lambdaRole.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
 
         // Function to initialize the pgvector extension on the RDS instance
         const pgExtensionInitFn = new PythonFunction(this, `${props.resourcePrefix}-rdsPgExtensionInitFn`, {
-            functionName: `${props.resourcePrefix}-rdsPgExtensionInitFn`,
             runtime: cdk.aws_lambda.Runtime.PYTHON_3_13,
-            entry: path.join(__dirname, '../../src/lambdas/rds-pg-extension-init'),
+            entry: path.join(__dirname, '../src/lambdas/rds-pg-extension-init'),
             handler: "handler",
-            architecture: props.architecture,
+            architecture: props.lambdaArchitecture,
             memorySize: 1024,
             timeout: cdk.Duration.seconds(60),
             logGroup: new cdk.aws_logs.LogGroup(this, `${props.resourcePrefix}-rdsPgExtensionInitFn-LogGroup`, {
