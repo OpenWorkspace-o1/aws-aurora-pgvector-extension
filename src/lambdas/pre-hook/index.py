@@ -27,8 +27,8 @@ def get_secret():
         get_secret_value_response = client.get_secret_value(
             SecretId=secret_name
         )
-        secret_dict = json.loads(get_secret_value_response['SecretString'])
-        return secret_dict.get('API_AUTHORIZATION_SECRET_KEY')
+        secret_value = json.loads(get_secret_value_response['SecretString'])
+        return secret_value
     except Exception as e:
         logger.error(f"Error retrieving secret: {str(e)}")
         raise e
