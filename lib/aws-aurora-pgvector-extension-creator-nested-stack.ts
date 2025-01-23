@@ -116,8 +116,8 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
         });
 
         // Function to initialize the pgvector extension on the RDS instance
-        const pgExtensionInitFn = new PythonFunction(this, `${props.resourcePrefix}-rdsPgExtensionInitFn`, {
-            runtime: cdk.aws_lambda.Runtime.PYTHON_3_12,
+        this.rdsPgExtensionInitFn = new PythonFunction(this, `${props.resourcePrefix}-rdsPgExtensionInitFn`, {
+            runtime: cdk.aws_lambda.Runtime.PYTHON_3_13,
             entry: path.join(__dirname, '../src/lambdas/rds-pg-extension-init'),
             handler: "handler",
             architecture: props.lambdaArchitecture,
@@ -140,14 +140,12 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
             securityGroups: [lambdaFnSecGrp],
             vpcSubnets: vpcSubnetSelection,
         });
-        pgExtensionInitFn.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
+        this.rdsPgExtensionInitFn.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
 
         // Grant Lambda permission to decrypt using KMS key
-        kmsKey.grantDecrypt(pgExtensionInitFn);
+        kmsKey.grantDecrypt(this.rdsPgExtensionInitFn);
 
         // Grant Lambda permission to read the secret
-        dbPasswordSecret.grantRead(pgExtensionInitFn);
-
-        this.rdsPgExtensionInitFn = pgExtensionInitFn;
+        dbPasswordSecret.grantRead(this.rdsPgExtensionInitFn);
     }
 }
