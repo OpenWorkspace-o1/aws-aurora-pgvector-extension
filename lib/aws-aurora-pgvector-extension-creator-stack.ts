@@ -1,16 +1,29 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { AwsAuroraPgvectorExtensionCreatorStackProps } from './AwsAuroraPgvectorExtensionCreatorStackProps';
+import { AwsAuroraPgvectorExtensionCreatorNestedStack } from './aws-aurora-pgvector-extension-creator-nested-stack';
+import { AwsAuroraPgvectorExtensionEndpointNestedStack } from './aws-aurora-pgvector-extension-endpoint-nested-stack';
 
 export class AwsAuroraPgvectorExtensionCreatorStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AwsAuroraPgvectorExtensionCreatorStackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
+    const auroraPgvectorExtensionCreatorNestedStack = new AwsAuroraPgvectorExtensionCreatorNestedStack(this, `${props.resourcePrefix}-auroraPgvectorExtensionCreatorNestedStack`, {
+      ...props,
+    });
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'AwsAuroraPgvectorExtensionCreatorQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    const auroraPgvectorExtensionEndpointNestedStack = new AwsAuroraPgvectorExtensionEndpointNestedStack(this, `${props.resourcePrefix}-auroraPgvectorExtensionEndpointNestedStack`, {
+      ...props,
+      rdsPgExtensionInitFn: auroraPgvectorExtensionCreatorNestedStack.rdsPgExtensionInitFn,
+      apiSecretKey: process.env.API_AUTHORIZATION_SECRET_KEY!,
+      allowOrigins: process.env.ALLOW_ORIGINS!.split(','),
+    });
+
+    // Export the endpoint URL
+    new cdk.CfnOutput(this, 'AuroraPgvectorExtensionEndpointUrl', {
+      value: auroraPgvectorExtensionEndpointNestedStack.httpApiUrl,
+      exportName: `${props.resourcePrefix}-auroraPgvectorExtensionEndpointUrl`,
+      description: 'Aurora PGVector Extension Creator Endpoint URL',
+    });
   }
 }

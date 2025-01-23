@@ -17,5 +17,7 @@ declare module NodeJS {
         RDS_HOST: string;
         RDS_SECURITY_GROUP_ID: string;
         ARCHITECTURE: string;
+        API_AUTHORIZATION_SECRET_KEY: string;
+        ALLOW_ORIGINS: string;
     }
 }

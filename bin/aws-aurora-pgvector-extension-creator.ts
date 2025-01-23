@@ -34,6 +34,8 @@ checkEnvVariables('APP_NAME',
     'RDS_HOST',
     'RDS_SECURITY_GROUP_ID',
     'ARCHITECTURE',
+    'API_AUTHORIZATION_SECRET_KEY',
+    'ALLOW_ORIGINS',
 );
 
 const { CDK_DEFAULT_ACCOUNT: account } = process.env;
@@ -74,7 +76,7 @@ const stackProps: AwsAuroraPgvectorExtensionCreatorStackProps = {
     rdsPort: process.env.RDS_PORT!,
     rdsHost: process.env.RDS_HOST!,
     rdsSecGrpId: process.env.RDS_SECURITY_GROUP_ID!,
-    architecture: parseLambdaArchitectureFromEnv(),
+    lambdaArchitecture: parseLambdaArchitectureFromEnv(),
 };
 
 new AwsAuroraPgvectorExtensionCreatorStack(app, `${owner}-${deployEnvironment}-AwsAuroraPgvectorExtensionCreatorStack`, {
