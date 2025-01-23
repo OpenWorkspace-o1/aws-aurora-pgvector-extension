@@ -117,7 +117,7 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
 
         // Function to initialize the pgvector extension on the RDS instance
         const pgExtensionInitFn = new PythonFunction(this, `${props.resourcePrefix}-rdsPgExtensionInitFn`, {
-            runtime: cdk.aws_lambda.Runtime.PYTHON_3_13,
+            runtime: cdk.aws_lambda.Runtime.PYTHON_3_12,
             entry: path.join(__dirname, '../src/lambdas/rds-pg-extension-init'),
             handler: "handler",
             architecture: props.lambdaArchitecture,
