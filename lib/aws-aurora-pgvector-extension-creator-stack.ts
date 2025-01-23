@@ -4,6 +4,8 @@ import { SubnetSelection } from 'aws-cdk-lib/aws-ec2';
 import { AwsAuroraPgvectorExtensionCreatorStackProps } from './AwsAuroraPgvectorExtensionCreatorStackProps';
 import { parseVpcSubnetType } from '../utils/vpc-type-parser';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as path from 'path';
+import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
 
 export class AwsAuroraPgvectorExtensionCreatorStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AwsAuroraPgvectorExtensionCreatorStackProps) {
@@ -56,5 +58,42 @@ export class AwsAuroraPgvectorExtensionCreatorStack extends cdk.Stack {
         ec2.Port.tcp(Number(props.rdsPort)),
         `Allow all traffic from lambdaFnSecGrp to postgresSecGrp via port ${props.rdsPort}.`
     );
+
+    const lambdaRole = new cdk.aws_iam.Role(this, `${props.resourcePrefix}-rdsDdlTriggerFn-Role`, {
+      assumedBy: new cdk.aws_iam.ServicePrincipal('lambda.amazonaws.com'),
+      managedPolicies: [
+          cdk.aws_iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+          cdk.aws_iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
+      ],
+    });
+    lambdaRole.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
+
+    // Function to initialize the pgvector extension on the RDS instance
+    const rdsPgExtensionInitFn = new PythonFunction(this, `${props.resourcePrefix}-rdsPgExtensionInitFn`, {
+        functionName: `${props.resourcePrefix}-rdsPgExtensionInitFn`,
+        runtime: cdk.aws_lambda.Runtime.PYTHON_3_13,
+        entry: path.join(__dirname, '../../src/lambdas/rds-pg-extension-init'),
+        handler: "handler",
+        architecture: props.architecture,
+        memorySize: 1024,
+        timeout: cdk.Duration.seconds(60),
+        logGroup: new cdk.aws_logs.LogGroup(this, `${props.resourcePrefix}-rdsPgExtensionInitFn-LogGroup`, {
+            logGroupName: `${props.resourcePrefix}-rdsPgExtensionInitFn-LogGroup`,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+            retention: cdk.aws_logs.RetentionDays.ONE_WEEK,
+        }),
+        environment: {
+            DB_NAME: props.rdsDatabaseName,
+            DB_USER: props.rdsUsername,
+            DB_PASSWORD: props.rdsPassword,
+            DB_HOST: props.rdsHost,
+            DB_PORT: props.rdsPort,
+        },
+        role: lambdaRole,
+        vpc: vpc,
+        securityGroups: [lambdaFnSecGrp],
+        vpcSubnets: vpcSubnetSelection,
+    });
+    rdsPgExtensionInitFn.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
   }
 }
