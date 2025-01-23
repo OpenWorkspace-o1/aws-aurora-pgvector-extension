@@ -39,7 +39,6 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
 
         // Create secret for API authorization encrypted with KMS
         const apiAuthSecret = new secretsmanager.Secret(this, 'ApiAuthSecret', {
-            secretName: `${props.resourcePrefix}-auth-key-${props.deployEnvironment}`,
             description: 'API Authorization Secret Key',
             secretStringValue: SecretValue.unsafePlainText(props.apiSecretKey),
             encryptionKey: kmsKey,
