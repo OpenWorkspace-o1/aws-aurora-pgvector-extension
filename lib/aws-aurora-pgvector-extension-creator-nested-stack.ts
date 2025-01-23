@@ -140,6 +140,13 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
             vpcSubnets: vpcSubnetSelection,
         });
         pgExtensionInitFn.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
+
+        // Grant Lambda permission to decrypt using KMS key
+        kmsKey.grantDecrypt(pgExtensionInitFn);
+
+        // Grant Lambda permission to read the secret
+        dbPasswordSecret.grantRead(pgExtensionInitFn);
+
         this.rdsPgExtensionInitFn = pgExtensionInitFn;
     }
 }
