@@ -1,4 +1,4 @@
-import { NestedStack, NestedStackProps } from "aws-cdk-lib";
+import { Duration, NestedStack, NestedStackProps, SecretValue } from "aws-cdk-lib";
 import { AwsAuroraPgvectorExtensionCreatorBaseStackProps } from "./AwsAuroraPgvectorExtensionCreatorStackProps";
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
@@ -8,6 +8,8 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as path from 'path';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
 import { Architecture } from "aws-cdk-lib/aws-lambda";
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as kms from 'aws-cdk-lib/aws-kms';
 
 export interface AwsAuroraPgvectorExtensionCreatorNestedStackProps extends NestedStackProps, AwsAuroraPgvectorExtensionCreatorBaseStackProps {
     /** Username for RDS database access */
@@ -96,6 +98,22 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
         });
         lambdaRole.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
 
+        // Create KMS Key for encryption with automatic rotation
+        const kmsKey = new kms.Key(this, 'KmsKeyForDbPassword', {
+            enabled: true,
+            enableKeyRotation: true,
+            rotationPeriod: Duration.days(90),
+            description: 'Key for encrypting database password,'
+        });
+
+        // Create secret for API authorization encrypted with KMS
+        const dbPasswordSecret = new secretsmanager.Secret(this, 'DbPasswordSecret', {
+            secretName: `${props.resourcePrefix}-db-password-${props.deployEnvironment}`,
+            description: 'Database Password',
+            secretStringValue: SecretValue.unsafePlainText(props.rdsPassword),
+            encryptionKey: kmsKey,
+        });
+
         // Function to initialize the pgvector extension on the RDS instance
         const pgExtensionInitFn = new PythonFunction(this, `${props.resourcePrefix}-rdsPgExtensionInitFn`, {
             runtime: cdk.aws_lambda.Runtime.PYTHON_3_13,
@@ -112,9 +130,9 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
             environment: {
                 DB_NAME: props.rdsDatabaseName,
                 DB_USER: props.rdsUsername,
-                DB_PASSWORD: props.rdsPassword,
                 DB_HOST: props.rdsHost,
                 DB_PORT: props.rdsPort,
+                DB_PASSWORD_SECRET_NAME: dbPasswordSecret.secretName,
             },
             role: lambdaRole,
             vpc: vpc,

@@ -1,8 +1,10 @@
 import os
+import boto3
 from aws_lambda_powertools import Logger
 from sqlalchemy import Engine, create_engine
 import sqlalchemy
 
+secret_name = os.environ.get("DB_PASSWORD_SECRET_NAME")
 
 class PartialDatabaseCredentialsError(Exception):
     """Raised when only some database credentials are provided"""
@@ -13,7 +15,6 @@ def _check_database_env_vars():
     db_vars = {
         "DB_NAME": os.environ.get("DB_NAME"),
         "DB_USER": os.environ.get("DB_USER"),
-        "DB_PASSWORD": os.environ.get("DB_PASSWORD"),
         "DB_HOST": os.environ.get("DB_HOST"),
         "DB_PORT": os.environ.get("DB_PORT"),
     }
@@ -107,11 +108,21 @@ def handler(event, context):
     # Check database environment variables consistency
     db_vars = _check_database_env_vars()
 
+    # Get database password from Secrets Manager
+    if not secret_name:
+        raise PartialDatabaseCredentialsError("DB_PASSWORD_SECRET_NAME environment variable is required")
+
+    secrets_client = boto3.client('secretsmanager')
+    secret_value = secrets_client.get_secret_value(SecretId=secret_name).get('SecretString', '')
+
+    if not secret_value:
+        raise PartialDatabaseCredentialsError("Failed to retrieve database password from Secrets Manager")
+
     conn = _connection_string_from_db_params(
         driver=os.environ.get("PGVECTOR_DRIVER", "psycopg"),
         database=db_vars["DB_NAME"],
         user=db_vars["DB_USER"],
-        password=db_vars["DB_PASSWORD"],
+        password=secret_value,
         host=db_vars["DB_HOST"],
         port=db_vars["DB_PORT"],
     )

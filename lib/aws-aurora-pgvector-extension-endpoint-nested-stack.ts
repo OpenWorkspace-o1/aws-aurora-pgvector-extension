@@ -31,10 +31,10 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
 
         // Create KMS Key for encryption with automatic rotation
         const kmsKey = new kms.Key(this, 'KmsKey', {
+            enabled: true,
             enableKeyRotation: true,
             rotationPeriod: Duration.days(90),
             description: 'Key for encrypting API authorization secrets',
-            alias: `${props.resourcePrefix}-kms-key`,
         });
 
         // Create secret for API authorization encrypted with KMS
