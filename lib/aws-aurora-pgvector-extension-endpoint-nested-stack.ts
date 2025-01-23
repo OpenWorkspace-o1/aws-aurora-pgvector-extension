@@ -72,7 +72,7 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
         // Create API Stage
         new apigatewayv2.HttpStage(this, 'HttpStageWithProperties', {
             httpApi: httpApi,
-            stageName: props.deployEnvironment,
+            stageName: props.deployEnvironment.replace(/[^a-zA-Z0-9-]/g, '-'),
             description: `${props.deployEnvironment} API Stage.`,
             autoDeploy: true,
         });
