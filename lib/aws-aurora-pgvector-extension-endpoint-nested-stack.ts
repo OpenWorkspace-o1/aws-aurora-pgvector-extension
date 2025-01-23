@@ -30,19 +30,20 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
         super(scope, id, props);
 
         // Create KMS Key for encryption with automatic rotation
-        const kmsKey = new kms.Key(this, 'KmsKey', {
+        const kmsKey = new kms.Key(this, 'KmsKeyForApiAuthSecret', {
+            enabled: true,
             enableKeyRotation: true,
             rotationPeriod: Duration.days(90),
             description: 'Key for encrypting API authorization secrets',
-            alias: `${props.resourcePrefix}-kms-key`,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
         // Create secret for API authorization encrypted with KMS
         const apiAuthSecret = new secretsmanager.Secret(this, 'ApiAuthSecret', {
-            secretName: `${props.resourcePrefix}-auth-key-${props.deployEnvironment}`,
             description: 'API Authorization Secret Key',
             secretStringValue: SecretValue.unsafePlainText(props.apiSecretKey),
             encryptionKey: kmsKey,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
         const lambdaRole = new cdk.aws_iam.Role(this, `${props.resourcePrefix}-apiKeyAuthorizerLambda-Role`, {

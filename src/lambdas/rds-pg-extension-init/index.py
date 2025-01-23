@@ -3,6 +3,7 @@ from aws_lambda_powertools import Logger
 from sqlalchemy import Engine, create_engine
 import sqlalchemy
 
+LOGGER = Logger()
 
 class PartialDatabaseCredentialsError(Exception):
     """Raised when only some database credentials are provided"""
@@ -13,9 +14,9 @@ def _check_database_env_vars():
     db_vars = {
         "DB_NAME": os.environ.get("DB_NAME"),
         "DB_USER": os.environ.get("DB_USER"),
-        "DB_PASSWORD": os.environ.get("DB_PASSWORD"),
         "DB_HOST": os.environ.get("DB_HOST"),
         "DB_PORT": os.environ.get("DB_PORT"),
+        "DB_PASSWORD": os.environ.get("DB_PASSWORD"),
     }
 
     present_vars = [name for name, value in db_vars.items() if value]
@@ -26,8 +27,6 @@ def _check_database_env_vars():
             f"Some database credentials missing. Present: {present_vars}, Missing: {missing_vars}"
         )
     return db_vars
-
-LOGGER = Logger()
 
 def _create_vector_extension(db_engine: Engine) -> None:
     """Create vector extension in PostgreSQL database with transactional lock"""
@@ -101,8 +100,6 @@ def handler(event, context):
     Example Event:
         Typically triggered by CloudWatch Events rule matching RDS cluster creation
     """
-    LOGGER.info(f"Event: {event}")
-    LOGGER.info(f"Context: {context}")
 
     # Check database environment variables consistency
     db_vars = _check_database_env_vars()
