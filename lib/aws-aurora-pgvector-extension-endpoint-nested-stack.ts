@@ -2,6 +2,7 @@ import { NestedStack, NestedStackProps, SecretValue } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as kms from 'aws-cdk-lib/aws-kms';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
 import { Duration } from 'aws-cdk-lib';
@@ -24,11 +25,20 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
     constructor(scope: Construct, id: string, props: AwsAuroraPgvectorExtensionEndpointNestedStackProps) {
         super(scope, id, props);
 
-        // Create secret for API authorization
+        // Create KMS Key for encryption with automatic rotation
+        const kmsKey = new kms.Key(this, 'KmsKey', {
+            enableKeyRotation: true,
+            rotationPeriod: Duration.days(90),
+            description: 'Key for encrypting API authorization secrets',
+            alias: `${props.resourcePrefix}-kms-key`,
+        });
+
+        // Create secret for API authorization encrypted with KMS
         const apiAuthSecret = new secretsmanager.Secret(this, 'ApiAuthSecret', {
             secretName: `${props.resourcePrefix}-auth-key-${props.deployEnvironment}`,
             description: 'API Authorization Secret Key',
             secretStringValue: SecretValue.unsafePlainText(props.apiSecretKey),
+            encryptionKey: kmsKey,
         });
 
         // Create the pre-hook Lambda function (Authorizer)
@@ -48,6 +58,9 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
 
         // Grant the Lambda function permission to read the secret
         apiAuthSecret.grantRead(preHookLambda);
+
+        // Grant Lambda permission to decrypt using KMS key
+        kmsKey.grantDecrypt(preHookLambda);
 
         // Create the Lambda authorizer
         const authorizer = new HttpLambdaAuthorizer('lambdaAuthorizer', preHookLambda, {
