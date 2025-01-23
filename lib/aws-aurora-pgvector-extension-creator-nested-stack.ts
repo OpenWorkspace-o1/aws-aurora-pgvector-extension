@@ -89,7 +89,7 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
             `Allow Lambda to connect to PostgreSQL via port ${props.rdsPort}.`
         );
 
-        const lambdaRole = new cdk.aws_iam.Role(this, `${props.resourcePrefix}-rdsDdlTriggerFn-Role`, {
+        const lambdaRole = new cdk.aws_iam.Role(this, `${props.resourcePrefix}-rdsPgExtensionInitFn-Role`, {
         assumedBy: new cdk.aws_iam.ServicePrincipal('lambda.amazonaws.com'),
         managedPolicies: [
                 cdk.aws_iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
