@@ -5,6 +5,7 @@ import boto3
 import time
 from aws_lambda_powertools import Logger
 from botocore.config import Config
+from secrets import compare_digest
 
 logger = Logger()
 
@@ -74,7 +75,7 @@ def lambda_handler(event, context):
             logger.error("Missing Authorization header.")
             return response
 
-        if hmac.compare_digest(event["headers"]["Authorization"], secretToken):
+        if compare_digest(auth_header, secretToken):
             response = {
                 "isAuthorized": True
             }
