@@ -36,6 +36,8 @@ npm install
 
 3. Configure environment variables by creating a `.env` file:
 
+I assumed that you deployed [VPC](https://github.com/OpenWorkspace-o1/aws-vpc) and [Aurora PostgreSQL](https://github.com/OpenWorkspace-o1/aws-aurora-serverless) stacks to get the some of the following values:
+
 ```env
 # Application Configuration
 APP_NAME=your-aurora-pgvector-serverless
