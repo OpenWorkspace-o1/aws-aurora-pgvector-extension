@@ -1,6 +1,5 @@
 import os
 from aws_lambda_powertools import Logger
-from langchain_postgres.vectorstores import PGVector
 from sqlalchemy import Engine, create_engine
 import sqlalchemy
 
@@ -65,6 +64,19 @@ def create_vector_extension(db_engine: Engine) -> None:
         LOGGER.error(f"Failed to create vector extension: {e}")
         raise Exception(f"Failed to create vector extension: {e}") from e
 
+def _connection_string_from_db_params(
+        driver: str,
+        host: str,
+        port: int,
+        database: str,
+        user: str,
+        password: str,
+    ) -> str:
+        """Return connection string from database parameters."""
+        if driver != "psycopg":
+            raise NotImplementedError("Only psycopg3 driver is supported")
+        return f"postgresql+{driver}://{user}:{password}@{host}:{port}/{database}"
+
 
 def handler(event, context):
     """Lambda entry point for handling RDS DDL initialization events.
@@ -95,7 +107,7 @@ def handler(event, context):
     # Check database environment variables consistency
     db_vars = _check_database_env_vars()
 
-    conn = PGVector.connection_string_from_db_params(
+    conn = _connection_string_from_db_params(
         driver=os.environ.get("PGVECTOR_DRIVER", "psycopg"),
         database=db_vars["DB_NAME"],
         user=db_vars["DB_USER"],
