@@ -2,33 +2,8 @@ import os
 from aws_lambda_powertools import Logger
 from sqlalchemy import Engine, create_engine
 import sqlalchemy
-import boto3
-from botocore.config import Config
 
 LOGGER = Logger()
-def get_secret():
-    secret_name = os.getenv('DB_PASSWORD_SECRET_NAME')
-
-    session = boto3.session.Session()
-    config = Config(
-        retries = dict(
-            max_attempts = 3,
-            mode = 'adaptive'
-        )
-    )
-    client = session.client(
-        service_name='secretsmanager',
-        config=config
-    )
-    try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name
-        )
-        secret_value = get_secret_value_response['SecretString']
-        return secret_value
-    except Exception as e:
-        LOGGER.error(f"Error retrieving secret: {str(e)}")
-        raise e
 
 class PartialDatabaseCredentialsError(Exception):
     """Raised when only some database credentials are provided"""
@@ -41,6 +16,7 @@ def _check_database_env_vars():
         "DB_USER": os.environ.get("DB_USER"),
         "DB_HOST": os.environ.get("DB_HOST"),
         "DB_PORT": os.environ.get("DB_PORT"),
+        "DB_PASSWORD": os.environ.get("DB_PASSWORD"),
     }
 
     present_vars = [name for name, value in db_vars.items() if value]
@@ -128,26 +104,11 @@ def handler(event, context):
     # Check database environment variables consistency
     db_vars = _check_database_env_vars()
 
-    # Get database password from Secrets Manager
-    secret_name = os.environ.get("DB_PASSWORD_SECRET_NAME")
-    if not secret_name:
-        raise PartialDatabaseCredentialsError("DB_PASSWORD_SECRET_NAME environment variable is required")
-
-    try:
-        secret_value = get_secret()
-        LOGGER.info("Successfully retrieved database password from Secrets Manager")
-    except Exception as e:
-        LOGGER.error(f"Failed to retrieve secret: {str(e)}")
-        raise PartialDatabaseCredentialsError(f"Secret retrieval failed: {str(e)}")
-
-    if not secret_value:
-        raise PartialDatabaseCredentialsError("Retrieved secret value is empty")
-
     conn = _connection_string_from_db_params(
         driver=os.environ.get("PGVECTOR_DRIVER", "psycopg"),
         database=db_vars["DB_NAME"],
         user=db_vars["DB_USER"],
-        password=secret_value,
+        password=db_vars["DB_PASSWORD"],
         host=db_vars["DB_HOST"],
         port=db_vars["DB_PORT"],
     )

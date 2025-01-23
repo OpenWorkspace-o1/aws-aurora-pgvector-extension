@@ -1,4 +1,4 @@
-import { Duration, NestedStack, NestedStackProps, SecretValue } from "aws-cdk-lib";
+import { Duration, NestedStack, NestedStackProps } from "aws-cdk-lib";
 import { AwsAuroraPgvectorExtensionCreatorBaseStackProps } from "./AwsAuroraPgvectorExtensionCreatorStackProps";
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
@@ -8,7 +8,6 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as path from 'path';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
 import { Architecture } from "aws-cdk-lib/aws-lambda";
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as kms from 'aws-cdk-lib/aws-kms';
 
 export interface AwsAuroraPgvectorExtensionCreatorNestedStackProps extends NestedStackProps, AwsAuroraPgvectorExtensionCreatorBaseStackProps {
@@ -107,14 +106,6 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
-        // Create secret for API authorization encrypted with KMS
-        const dbPasswordSecret = new secretsmanager.Secret(this, 'DbPasswordSecret', {
-            description: 'Database Password',
-            secretStringValue: SecretValue.unsafePlainText(props.rdsPassword),
-            encryptionKey: kmsKey,
-            removalPolicy: cdk.RemovalPolicy.DESTROY,
-        });
-
         // Function to initialize the pgvector extension on the RDS instance
         this.rdsPgExtensionInitFn = new PythonFunction(this, `${props.resourcePrefix}-rdsPgExtensionInitFn`, {
             runtime: cdk.aws_lambda.Runtime.PYTHON_3_13,
@@ -133,19 +124,14 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
                 DB_USER: props.rdsUsername,
                 DB_HOST: props.rdsHost,
                 DB_PORT: props.rdsPort,
-                DB_PASSWORD_SECRET_NAME: dbPasswordSecret.secretName,
+                DB_PASSWORD: props.rdsPassword,
             },
+            environmentEncryption: kmsKey,
             role: lambdaRole,
             vpc: vpc,
             securityGroups: [lambdaFnSecGrp],
             vpcSubnets: vpcSubnetSelection,
         });
         this.rdsPgExtensionInitFn.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
-
-        // Grant Lambda permission to decrypt using KMS key
-        kmsKey.grantDecrypt(this.rdsPgExtensionInitFn);
-
-        // Grant Lambda permission to read the secret
-        dbPasswordSecret.grantRead(this.rdsPgExtensionInitFn);
     }
 }
