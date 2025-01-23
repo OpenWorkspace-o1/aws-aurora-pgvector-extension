@@ -90,9 +90,9 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
         const lambdaRole = new cdk.aws_iam.Role(this, `${props.resourcePrefix}-rdsDdlTriggerFn-Role`, {
         assumedBy: new cdk.aws_iam.ServicePrincipal('lambda.amazonaws.com'),
         managedPolicies: [
-            cdk.aws_iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
-            cdk.aws_iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
-        ],
+                cdk.aws_iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+                cdk.aws_iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
+            ],
         });
         lambdaRole.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
 
