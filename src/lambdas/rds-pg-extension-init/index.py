@@ -4,6 +4,7 @@ from aws_lambda_powertools import Logger
 from sqlalchemy import Engine, create_engine
 import sqlalchemy
 
+LOGGER = Logger()
 secret_name = os.environ.get("DB_PASSWORD_SECRET_NAME")
 
 class PartialDatabaseCredentialsError(Exception):
@@ -27,8 +28,6 @@ def _check_database_env_vars():
             f"Some database credentials missing. Present: {present_vars}, Missing: {missing_vars}"
         )
     return db_vars
-
-LOGGER = Logger()
 
 def _create_vector_extension(db_engine: Engine) -> None:
     """Create vector extension in PostgreSQL database with transactional lock"""
@@ -102,8 +101,6 @@ def handler(event, context):
     Example Event:
         Typically triggered by CloudWatch Events rule matching RDS cluster creation
     """
-    LOGGER.info(f"Event: {event}")
-    LOGGER.info(f"Context: {context}")
 
     # Check database environment variables consistency
     db_vars = _check_database_env_vars()
@@ -113,7 +110,8 @@ def handler(event, context):
         raise PartialDatabaseCredentialsError("DB_PASSWORD_SECRET_NAME environment variable is required")
 
     secrets_client = boto3.client('secretsmanager')
-    secret_value = secrets_client.get_secret_value(SecretId=secret_name).get('SecretString', '')
+    get_secret_value_response = secrets_client.get_secret_value(SecretId=secret_name)
+    secret_value = get_secret_value_response['SecretString']
 
     if not secret_value:
         raise PartialDatabaseCredentialsError("Failed to retrieve database password from Secrets Manager")
