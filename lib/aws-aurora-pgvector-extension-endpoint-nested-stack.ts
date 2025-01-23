@@ -33,10 +33,8 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
 
         // Create the pre-hook Lambda function (Authorizer)
         const preHookLambda = new PythonFunction(this, 'PreHookLambda', {
-            functionName: `${props.resourcePrefix}-preHookLambdaFn-${props.deployEnvironment}`,
             runtime: lambda.Runtime.PYTHON_3_13,
             handler: 'handler',
-            index: 'index.py',
             entry: path.join(__dirname, '../src/lambdas/pre-hook'),
             architecture: props.lambdaArchitecture,
             timeout: Duration.seconds(5),
