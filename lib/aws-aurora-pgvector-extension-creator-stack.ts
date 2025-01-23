@@ -19,6 +19,9 @@ export class AwsAuroraPgvectorExtensionCreatorStack extends cdk.Stack {
       allowOrigins: process.env.ALLOW_ORIGINS!.split(','),
     });
 
+    // Ensure auroraPgvectorExtensionCreatorNestedStack is created before auroraPgvectorExtensionEndpointNestedStack
+    auroraPgvectorExtensionEndpointNestedStack.addDependency(auroraPgvectorExtensionCreatorNestedStack);
+
     // Export the endpoint URL
     new cdk.CfnOutput(this, 'AuroraPgvectorExtensionEndpointUrl', {
       value: auroraPgvectorExtensionEndpointNestedStack.httpApiUrl,

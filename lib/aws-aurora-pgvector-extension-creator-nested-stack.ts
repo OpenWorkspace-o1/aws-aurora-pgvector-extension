@@ -1,4 +1,4 @@
-import { NestedStack, NestedStackProps } from "aws-cdk-lib";
+import { Duration, NestedStack, NestedStackProps } from "aws-cdk-lib";
 import { AwsAuroraPgvectorExtensionCreatorBaseStackProps } from "./AwsAuroraPgvectorExtensionCreatorStackProps";
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
@@ -8,6 +8,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as path from 'path';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
 import { Architecture } from "aws-cdk-lib/aws-lambda";
+import * as kms from 'aws-cdk-lib/aws-kms';
 
 export interface AwsAuroraPgvectorExtensionCreatorNestedStackProps extends NestedStackProps, AwsAuroraPgvectorExtensionCreatorBaseStackProps {
     /** Username for RDS database access */
@@ -87,7 +88,7 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
             `Allow Lambda to connect to PostgreSQL via port ${props.rdsPort}.`
         );
 
-        const lambdaRole = new cdk.aws_iam.Role(this, `${props.resourcePrefix}-rdsDdlTriggerFn-Role`, {
+        const lambdaRole = new cdk.aws_iam.Role(this, `${props.resourcePrefix}-rdsPgExtensionInitFn-Role`, {
         assumedBy: new cdk.aws_iam.ServicePrincipal('lambda.amazonaws.com'),
         managedPolicies: [
                 cdk.aws_iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
@@ -96,8 +97,17 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
         });
         lambdaRole.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
 
+        // Create KMS Key for encryption with automatic rotation
+        const kmsKey = new kms.Key(this, 'KmsKeyForDbPassword', {
+            enabled: true,
+            enableKeyRotation: true,
+            rotationPeriod: Duration.days(90),
+            description: 'Key for encrypting database password',
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
+
         // Function to initialize the pgvector extension on the RDS instance
-        const pgExtensionInitFn = new PythonFunction(this, `${props.resourcePrefix}-rdsPgExtensionInitFn`, {
+        this.rdsPgExtensionInitFn = new PythonFunction(this, `${props.resourcePrefix}-rdsPgExtensionInitFn`, {
             runtime: cdk.aws_lambda.Runtime.PYTHON_3_13,
             entry: path.join(__dirname, '../src/lambdas/rds-pg-extension-init'),
             handler: "handler",
@@ -112,16 +122,16 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
             environment: {
                 DB_NAME: props.rdsDatabaseName,
                 DB_USER: props.rdsUsername,
-                DB_PASSWORD: props.rdsPassword,
                 DB_HOST: props.rdsHost,
                 DB_PORT: props.rdsPort,
+                DB_PASSWORD: props.rdsPassword,
             },
+            environmentEncryption: kmsKey,
             role: lambdaRole,
             vpc: vpc,
             securityGroups: [lambdaFnSecGrp],
             vpcSubnets: vpcSubnetSelection,
         });
-        pgExtensionInitFn.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
-        this.rdsPgExtensionInitFn = pgExtensionInitFn;
+        this.rdsPgExtensionInitFn.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
     }
 }
