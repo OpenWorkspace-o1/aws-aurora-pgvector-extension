@@ -38,5 +38,5 @@ export interface AwsAuroraPgvectorExtensionCreatorStackProps extends StackProps,
     /** ID of the security group for the Aurora PostgreSQL instance */
     readonly rdsSecGrpId: string;
     /** Architecture of the Aurora PostgreSQL instance */
-    readonly architecture: Architecture;
+    readonly lambdaArchitecture: Architecture;
 }

@@ -23,7 +23,7 @@ export interface AwsAuroraPgvectorExtensionCreatorNestedStackProps extends Neste
     /** ID of the security group for the Aurora PostgreSQL instance */
     readonly rdsSecGrpId: string;
     /** Architecture of the Aurora PostgreSQL instance */
-    readonly architecture: Architecture;
+    readonly lambdaArchitecture: Architecture;
 }
 
 export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
@@ -102,7 +102,8 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
             runtime: cdk.aws_lambda.Runtime.PYTHON_3_13,
             entry: path.join(__dirname, '../../src/lambdas/rds-pg-extension-init'),
             handler: "handler",
-            architecture: props.architecture,
+            index: 'index.py',
+            architecture: props.lambdaArchitecture,
             memorySize: 1024,
             timeout: cdk.Duration.seconds(60),
             logGroup: new cdk.aws_logs.LogGroup(this, `${props.resourcePrefix}-rdsPgExtensionInitFn-LogGroup`, {
