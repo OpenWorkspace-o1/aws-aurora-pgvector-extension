@@ -1,4 +1,5 @@
 import { StackProps } from "aws-cdk-lib";
+import { Architecture } from "aws-cdk-lib/aws-lambda";
 
 export interface AwsAuroraPgvectorExtensionCreatorBaseStackProps {
     /** Resource prefix for all AWS resources */
@@ -36,4 +37,6 @@ export interface AwsAuroraPgvectorExtensionCreatorStackProps extends StackProps,
     readonly rdsHost: string;
     /** ID of the security group for the Aurora PostgreSQL instance */
     readonly rdsSecGrpId: string;
+    /** Architecture of the Aurora PostgreSQL instance */
+    readonly architecture: Architecture;
 }
