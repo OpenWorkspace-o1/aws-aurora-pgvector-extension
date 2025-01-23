@@ -6,3 +6,8 @@ node_modules
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+*.DS_Store
+!process-env.d.ts
+cdk.context.json
+.env
+.aider*
