@@ -71,11 +71,18 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
         // retrerive the security group for the postgres database
         const postgresSecGrp = ec2.SecurityGroup.fromSecurityGroupId(this, `${props.resourcePrefix}-PostgresSecGrp`, postgresSecGrpID);
 
-        // allow all traffic from lambdaFnSecGrp to postgresSecGrp via port 5432
+        // Allow Lambda to access PostgreSQL
         postgresSecGrp.addIngressRule(
             lambdaFnSecGrp,
-            ec2.Port.tcp(Number(props.rdsPort)),
-            `Allow all traffic from lambdaFnSecGrp to postgresSecGrp via port ${props.rdsPort}.`
+            ec2.Port.tcp(parseInt(props.rdsPort)),
+            `Allow Lambda to access PostgreSQL via port ${props.rdsPort}.`
+        );
+
+        // Allow Lambda to connect to PostgreSQL
+        lambdaFnSecGrp.addEgressRule(
+            postgresSecGrp,
+            ec2.Port.tcp(parseInt(props.rdsPort)),
+            `Allow Lambda to connect to PostgreSQL via port ${props.rdsPort}.`
         );
 
         const lambdaRole = new cdk.aws_iam.Role(this, `${props.resourcePrefix}-rdsDdlTriggerFn-Role`, {
