@@ -64,7 +64,7 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
             corsPreflight: {
                 allowHeaders: ['Content-Type', 'Authorization'],
                 allowMethods: [apigatewayv2.CorsHttpMethod.POST],
-                allowOrigins: props.allowOrigins,
+                allowOrigins: props.allowOrigins?.length ? props.allowOrigins : ['*'],
                 maxAge: Duration.days(1)
             },
         });
