@@ -27,6 +27,8 @@ export interface AwsAuroraPgvectorExtensionCreatorNestedStackProps extends Neste
 }
 
 export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
+    public readonly rdsPgExtensionInitFn: PythonFunction;
+
     constructor(scope: Construct, id: string, props: AwsAuroraPgvectorExtensionCreatorNestedStackProps) {
         super(scope, id, props);
 
@@ -95,7 +97,7 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
         lambdaRole.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
 
         // Function to initialize the pgvector extension on the RDS instance
-        const rdsPgExtensionInitFn = new PythonFunction(this, `${props.resourcePrefix}-rdsPgExtensionInitFn`, {
+        const pgExtensionInitFn = new PythonFunction(this, `${props.resourcePrefix}-rdsPgExtensionInitFn`, {
             functionName: `${props.resourcePrefix}-rdsPgExtensionInitFn`,
             runtime: cdk.aws_lambda.Runtime.PYTHON_3_13,
             entry: path.join(__dirname, '../../src/lambdas/rds-pg-extension-init'),
@@ -120,6 +122,7 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
             securityGroups: [lambdaFnSecGrp],
             vpcSubnets: vpcSubnetSelection,
         });
-        rdsPgExtensionInitFn.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
+        pgExtensionInitFn.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
+        this.rdsPgExtensionInitFn = pgExtensionInitFn;
     }
 }
