@@ -25,6 +25,7 @@ export interface AwsAuroraPgvectorExtensionEndpointNestedStackProps extends Nest
 
 export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
     public readonly httpApiUrl: string;
+    public readonly apiStage: string;
 
     constructor(scope: Construct, id: string, props: AwsAuroraPgvectorExtensionEndpointNestedStackProps) {
         super(scope, id, props);
@@ -113,9 +114,10 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
         });
 
         // Create API Stage
+        this.apiStage = props.deployEnvironment.replace(/[^a-zA-Z0-9-]/g, '-');
         new apigatewayv2.HttpStage(this, 'HttpStageWithProperties', {
             httpApi: httpApi,
-            stageName: props.deployEnvironment.replace(/[^a-zA-Z0-9-]/g, '-'),
+            stageName: this.apiStage,
             description: `${props.deployEnvironment} API Stage.`,
             autoDeploy: true,
         });
@@ -128,6 +130,6 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
             authorizer: authorizer,
         });
 
-        this.httpApiUrl = `${httpApi.apiEndpoint}/${props.deployEnvironment}`;
+        this.httpApiUrl = `${httpApi.apiEndpoint}`;
     }
 }

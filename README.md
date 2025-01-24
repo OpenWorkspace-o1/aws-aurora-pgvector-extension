@@ -6,6 +6,15 @@ This CDK TypeScript project automates the deployment of pgvector extension on Am
 
 This project provides an infrastructure-as-code solution to automatically install and configure the pgvector extension on Aurora PostgreSQL databases. It includes secure API endpoints for managing the extension and follows AWS best practices for security and scalability.
 
+Architecture:
+
+![Architecture](./assets/architecture.png)
+
+1. The Admin user makes a request to the API Gateway endpoint to install the PNG vector extension with API key authentication
+2. The API Gateway with Lambda authorizer is used to authenticate the request and authorize the user
+3. If the request is authorized, the Lambda function is used to install the pgvector extension on the Aurora PostgreSQL database. This lambda function needs to be deployed to the VPC of the Aurora PostgreSQL instance.
+4. The Lambda function will run the script to install the pgvector extension on the Aurora PostgreSQL database.
+
 ## Features
 
 - Automated pgvector extension installation on Aurora PostgreSQL
