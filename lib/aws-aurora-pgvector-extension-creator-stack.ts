@@ -24,7 +24,7 @@ export class AwsAuroraPgvectorExtensionCreatorStack extends cdk.Stack {
 
     // Export the endpoint URL
     new cdk.CfnOutput(this, 'AuroraPgvectorExtensionEndpointUrl', {
-      value: auroraPgvectorExtensionEndpointNestedStack.httpApiUrl,
+      value: `${auroraPgvectorExtensionEndpointNestedStack.httpApiUrl}/${auroraPgvectorExtensionEndpointNestedStack.apiStage}`,
       exportName: `${props.resourcePrefix}-auroraPgvectorExtensionEndpointUrl`,
       description: 'Aurora PGVector Extension Creator Endpoint URL',
     });

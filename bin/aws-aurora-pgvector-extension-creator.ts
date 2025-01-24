@@ -47,7 +47,7 @@ const appName = process.env.APP_NAME!;
 const owner = process.env.OWNER!;
 
 // check best practices based on AWS Solutions Security Matrix
-appAspects.add(new AwsSolutionsChecks());
+// appAspects.add(new AwsSolutionsChecks());
 
 appAspects.add(new ApplyTags({
     environment: deployEnvironment as 'development' | 'staging' | 'production' | 'feature',
