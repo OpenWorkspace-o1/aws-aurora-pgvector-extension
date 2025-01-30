@@ -1,4 +1,4 @@
-aws-lambda-powertools==3.4.1
+aws-lambda-powertools==3.5.0
 SQLAlchemy==2.0.37
 pgvector==0.3.6
 psycopg[binary,pool]==3.2.4
