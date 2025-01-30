@@ -8,7 +8,7 @@ This project provides an infrastructure-as-code solution to automatically instal
 
 Architecture:
 
-![Architecture](./assets/architecture.png)
+![Architecture Diagram](./assets/architecture.png)
 
 1. The Admin user makes a request to the API Gateway endpoint to install the PNG vector extension with API key authentication
 2. The API Gateway with Lambda authorizer is used to authenticate the request and authorize the user
@@ -16,7 +16,7 @@ Architecture:
 4. The Lambda function will run the script to install the pgvector extension on the Aurora PostgreSQL database.
 
 ## Features
-
+- Idempotent extension installation with transactional locking
 - Automated pgvector extension installation on Aurora PostgreSQL
 - Secure API endpoint with Lambda authorizer
 - KMS encryption for sensitive data
@@ -24,6 +24,7 @@ Architecture:
 - VPC-aware Lambda functions
 - Automated secret rotation
 - CloudWatch logging integration
+- Infrastructure-as-Code with AWS CDK
 
 ## Prerequisites
 
@@ -32,7 +33,7 @@ Architecture:
 - AWS CLI configured with appropriate credentials
 - Python 3.13 (for Lambda functions)
 - An existing Aurora PostgreSQL cluster
-- VPC with private subnets
+- VPC with private subnets (same as Aurora cluster)
 
 ## Project Setup
 
@@ -81,7 +82,7 @@ ARCHITECTURE=ARM_64  # or X86_64
 
 4. Update the stack configuration with your Aurora PostgreSQL details:
    - Database credentials
-   - VPC configuration
+   - VPC configuration (must match Aurora cluster's VPC)
    - Subnet information
    - Security group settings
 
@@ -105,16 +106,28 @@ Common CDK commands:
 
 ## Output
 
-After successful deployment, the stack outputs:
+After successful deployment, the stack will output:
 
 - API Gateway endpoint URL for managing the pgvector extension
-- The endpoint requires authentication using the configured API key
-- Use the endpoint with a POST request to `/activate` to install the pgvector extension
+- API endpoint requires authentication via the `Authorization` header with the configured secret key
+
+Example usage:
+```bash
+curl -X POST \
+  -H "Authorization: your-secret-key" \
+  https://<api-gateway-endpoint>/activate
+```
 
 ## Security
 
-- All sensitive information is stored in AWS Secrets Manager
-- KMS encryption for database passwords and API keys
-- Lambda authorizer for API endpoint protection
-- VPC isolation for Lambda functions
+- **Secrets Management**:
+  - Database credentials injected via encrypted Lambda environment variables
+  - API keys stored in Secrets Manager with KMS encryption
+- **Network Security**:
+  - Lambda functions deployed in private subnets
+  - Security group rules restrict database access to Lambda only
+  - All database traffic stays within the VPC
+- **Cryptography**:
+  - KMS keys with automatic rotation (90 days)
+  - TLS-encrypted database connections
 - Automatic secret rotation enabled
