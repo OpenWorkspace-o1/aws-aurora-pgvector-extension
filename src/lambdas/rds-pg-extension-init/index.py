@@ -78,27 +78,50 @@ def _connection_string_from_db_params(
 
 
 def handler(event, context):
-    """Lambda entry point for handling RDS DDL initialization events.
+    """AWS Lambda entry point for initializing PostgreSQL vector extension in RDS Aurora.
 
-    Responsibilities:
-    - Validates database connection environment variables
-    - Creates PostgreSQL vector extension with proper locking
-    - Handles CloudWatch Events triggering from RDS cluster creation
+    Key Responsibilities:
+    1. Environment Validation:
+       - Verifies complete set of database credentials (DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT)
+       - Ensures either all credentials are provided or none (no partial configurations)
+
+    2. Database Operations:
+       - Establishes secure connection using SQLAlchemy with psycopg3 driver
+       - Creates/updates 'vector' extension using transactional advisory locks to prevent:
+         - Concurrent extension modifications
+         - Version conflicts during updates
+       - Implements idempotent operations (safe for retries)
+
+    3. Event Handling:
+       - Designed for CloudWatch Events triggering on RDS cluster lifecycle events
+       - Compatible with direct Lambda invocations for manual execution
 
     Args:
-        event: AWS Lambda event payload containing trigger information
-        context: AWS Lambda execution context metadata
+        event (dict): AWS Lambda event payload (not directly used, but required for trigger mechanism)
+        context (object): AWS Lambda context metadata (not utilized in current implementation)
 
     Returns:
-        dict: Lambda response format with status code and message body
-        Example: {'statusCode': 200, 'body': 'Success message'}
+        dict: Standardized Lambda response format:
+        - Success: {'statusCode': 200, 'body': 'Success message'}
+        - Errors: Propagated through exception raising
 
     Raises:
-        PartialDatabaseCredentialsError: If incomplete database credentials provided
-        Exception: Propagates any errors during extension creation
+        PartialDatabaseCredentialsError: If incomplete DB credentials detected
+        NotImplementedError: If attempting to use non-psycopg3 database driver
+        sqlalchemy.exc.SQLAlchemyError: For database connection/execution errors
+        RuntimeError: For extension creation failures
 
-    Example Event:
-        Typically triggered by CloudWatch Events rule matching RDS cluster creation
+    Environment Variables:
+        Required: DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
+        Optional: PGVECTOR_DRIVER (default: 'psycopg' for psycopg3)
+
+    Example Event Pattern (CloudWatch):
+        {"source": ["aws.rds"], "detail-type": ["RDS DB Cluster Availability"]}
+
+    Notes:
+        - Idempotent: Safe for multiple executions (checks extension state before acting)
+        - Locking: Uses pg_advisory_xact_lock with cluster-wide lock identifier
+        - Security: Requires IAM permissions for KMS-encrypted secret access
     """
 
     # Check database environment variables consistency
