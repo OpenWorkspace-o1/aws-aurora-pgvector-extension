@@ -62,7 +62,7 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
             handler: 'handler',
             role: lambdaRole,
             timeout: cdk.Duration.seconds(30),
-            architecture: lambda.Architecture.X86_64,
+            architecture: props.lambdaArchitecture,
             logGroup: new cdk.aws_logs.LogGroup(this, `${props.resourcePrefix}-authorizerLambdaFn-LogGroup`, {
                 logGroupName: `${props.resourcePrefix}-authorizerLambdaFn-LogGroup`,
                 removalPolicy: cdk.RemovalPolicy.DESTROY,
