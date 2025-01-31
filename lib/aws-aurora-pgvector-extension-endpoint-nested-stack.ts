@@ -31,7 +31,7 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
         super(scope, id, props);
 
         // Create KMS Key for encryption with automatic rotation
-        const kmsKey = new kms.Key(this, 'KmsKeyForApiAuthSecret', {
+        const kmsKey = new kms.Key(this, `${props.resourcePrefix}-kmsKeyForApiAuthSecret`, {
             enabled: true,
             enableKeyRotation: true,
             rotationPeriod: Duration.days(90),
@@ -40,14 +40,14 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
         });
 
         // Create secret for API authorization encrypted with KMS
-        const apiAuthSecret = new secretsmanager.Secret(this, 'ApiAuthSecret', {
+        const apiAuthSecret = new secretsmanager.Secret(this, `${props.resourcePrefix}-apiAuthSecret`, {
             description: 'API Authorization Secret Key',
             secretStringValue: SecretValue.unsafePlainText(props.apiSecretKey),
             encryptionKey: kmsKey,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
-        const lambdaRole = new cdk.aws_iam.Role(this, `${props.resourcePrefix}-apiKeyAuthorizerLambda-Role`, {
+        const lambdaRole = new cdk.aws_iam.Role(this, `${props.resourcePrefix}-apiKeyAuthorizerLambdaRole`, {
             assumedBy: new cdk.aws_iam.ServicePrincipal('lambda.amazonaws.com'),
             managedPolicies: [
                 cdk.aws_iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
@@ -61,8 +61,8 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
             entry: path.join(__dirname, '../src/lambdas/api-key-authorizer/index.ts'),
             handler: 'handler',
             role: lambdaRole,
-            timeout: cdk.Duration.seconds(30), // 30 seconds
-            architecture: lambda.Architecture.X86_64,
+            timeout: cdk.Duration.seconds(30),
+            architecture: props.lambdaArchitecture,
             logGroup: new cdk.aws_logs.LogGroup(this, `${props.resourcePrefix}-authorizerLambdaFn-LogGroup`, {
                 logGroupName: `${props.resourcePrefix}-authorizerLambdaFn-LogGroup`,
                 removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -101,8 +101,8 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
         });
 
         // Create the HTTP API
-        const httpApi = new apigatewayv2.HttpApi(this, 'HttpApi', {
-            apiName: `${props.resourcePrefix}-api`,
+        const httpApi = new apigatewayv2.HttpApi(this, `${props.resourcePrefix}-httpApi`, {
+            apiName: `${props.resourcePrefix}-httpApi`,
             description: 'HTTP API for CX Web Explorer Service.',
             createDefaultStage: false,
             corsPreflight: {
@@ -115,7 +115,7 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
 
         // Create API Stage
         this.apiStage = props.deployEnvironment.replace(/[^a-zA-Z0-9-]/g, '-');
-        new apigatewayv2.HttpStage(this, 'HttpStageWithProperties', {
+        new apigatewayv2.HttpStage(this, `${props.resourcePrefix}-apiStage`, {
             httpApi: httpApi,
             stageName: this.apiStage,
             description: `${props.deployEnvironment} API Stage.`,
@@ -126,7 +126,7 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
         httpApi.addRoutes({
             path: '/activate',
             methods: [apigatewayv2.HttpMethod.POST],
-            integration: new HttpLambdaIntegration('mainLambda', props.rdsPgExtensionInitFn),
+            integration: new HttpLambdaIntegration(`${props.resourcePrefix}-mainLambda`, props.rdsPgExtensionInitFn),
             authorizer: authorizer,
         });
 
