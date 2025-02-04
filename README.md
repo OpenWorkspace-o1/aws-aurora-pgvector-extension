@@ -13,7 +13,7 @@ Architecture:
 1. The Admin user makes a request to the API Gateway endpoint to install the PNG vector extension with API key authentication
 2. The API Gateway with Lambda authorizer is used to authenticate the request and authorize the user
 3. If the request is authorized, the Lambda function is used to install the pgvector extension on the Aurora PostgreSQL database. This lambda function needs to be deployed to the VPC of the Aurora PostgreSQL instance.
-4. The Lambda function will run the script to install the pgvector extension on the Aurora PostgreSQL database.
+4. The Lambda function will run the script to install the pgvector extension on the Aurora PostgreSQL database. This lambda function currently only supports the [psycogp3](https://www.psycopg.org/psycopg3/) driver.
 
 ## Features
 - Idempotent extension installation with transactional locking

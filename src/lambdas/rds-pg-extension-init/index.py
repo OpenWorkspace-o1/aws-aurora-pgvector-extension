@@ -29,7 +29,23 @@ def _check_database_env_vars():
     return db_vars
 
 def _create_vector_extension(db_engine: Engine) -> None:
-    """Create vector extension in PostgreSQL database with transactional lock"""
+    """Create and update vector extension in PostgreSQL database with transactional safety.
+
+    Uses advisory locks to prevent concurrent extension updates while allowing regular
+    database operations. Ensures extension is either created at latest version or updated
+    if outdated.
+
+    Args:
+        db_engine: SQLAlchemy engine instance connected to target database
+
+    Raises:
+        Exception: If extension creation/update fails, with original SQL error message
+        OperationalError: If connection to database is lost during execution
+
+    Note:
+        Uses transaction-level advisory lock (pg_advisory_xact_lock) that automatically
+        releases when transaction completes. Lock ID derived from hash of 'vector' string.
+    """
     try:
         with db_engine.connect() as conn:
             statement = sqlalchemy.text("""
@@ -71,57 +87,49 @@ def _connection_string_from_db_params(
         user: str,
         password: str,
     ) -> str:
-        """Return connection string from database parameters."""
-        if driver != "psycopg":
-            raise NotImplementedError("Only psycopg3 driver is supported")
-        return f"postgresql+{driver}://{user}:{password}@{host}:{port}/{database}"
+    """Construct PostgreSQL connection string from individual parameters.
+
+    Args:
+        driver: Database driver name (currently only 'psycopg' supported)
+        host: Database hostname or IP address
+        port: Database port number
+        database: Name of target database
+        user: Database authentication username
+        password: Database authentication password
+
+    Returns:
+        str: SQLAlchemy-compatible connection string
+
+    Raises:
+        NotImplementedError: If requested driver is not 'psycopg'
+
+    Note:
+        Uses psycopg3 driver syntax (postgresql+psycopg://) for SQLAlchemy connections
+    """
+    if driver != "psycopg":
+        raise NotImplementedError("Only psycopg3 driver is supported")
+    return f"postgresql+{driver}://{user}:{password}@{host}:{port}/{database}"
 
 
 def handler(event, context):
     """AWS Lambda entry point for initializing PostgreSQL vector extension in RDS Aurora.
 
-    Key Responsibilities:
-    1. Environment Validation:
-       - Verifies complete set of database credentials (DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT)
-       - Ensures either all credentials are provided or none (no partial configurations)
-
-    2. Database Operations:
-       - Establishes secure connection using SQLAlchemy with psycopg3 driver
-       - Creates/updates 'vector' extension using transactional advisory locks to prevent:
-         - Concurrent extension modifications
-         - Version conflicts during updates
-       - Implements idempotent operations (safe for retries)
-
-    3. Event Handling:
-       - Designed for CloudWatch Events triggering on RDS cluster lifecycle events
-       - Compatible with direct Lambda invocations for manual execution
+    Expects database connection parameters in environment variables:
+    - DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 
     Args:
-        event (dict): AWS Lambda event payload (not directly used, but required for trigger mechanism)
-        context (object): AWS Lambda context metadata (not utilized in current implementation)
+        event: Lambda invocation event (unused)
+        context: Lambda execution context (unused)
 
     Returns:
-        dict: Standardized Lambda response format:
-        - Success: {'statusCode': 200, 'body': 'Success message'}
-        - Errors: Propagated through exception raising
+        dict: Lambda response format with status code and message body
 
     Raises:
-        PartialDatabaseCredentialsError: If incomplete DB credentials detected
-        NotImplementedError: If attempting to use non-psycopg3 database driver
-        sqlalchemy.exc.SQLAlchemyError: For database connection/execution errors
-        RuntimeError: For extension creation failures
+        PartialDatabaseCredentialsError: If incomplete database credentials provided
+        Exception: Propagates any errors from extension creation process
 
     Environment Variables:
-        Required: DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
-        Optional: PGVECTOR_DRIVER (default: 'psycopg' for psycopg3)
-
-    Example Event Pattern (CloudWatch):
-        {"source": ["aws.rds"], "detail-type": ["RDS DB Cluster Availability"]}
-
-    Notes:
-        - Idempotent: Safe for multiple executions (checks extension state before acting)
-        - Locking: Uses pg_advisory_xact_lock with cluster-wide lock identifier
-        - Security: Requires IAM permissions for KMS-encrypted secret access
+        PGVECTOR_DRIVER: Optional override for database driver (default: 'psycopg')
     """
 
     # Check database environment variables consistency
