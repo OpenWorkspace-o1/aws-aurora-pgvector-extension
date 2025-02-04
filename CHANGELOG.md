@@ -1,4 +1,4 @@
-## 2025-02-04 [PR#OpenWorkspace-o1/aws-aurora-pgvector-extension-creator/13](https://github.com/OpenWorkspace-o1/aws-aurora-pgvector-extension-creator/pull/13)
+## 2025-02-04 [PR#13](https://github.com/OpenWorkspace-o1/aws-aurora-pgvector-extension-creator/pull/13)
 
 ### Changed
 Enhanced documentation for `_create_vector_extension` and `handler` functions, including details on transactional safety, advisory locks, and error handling.
