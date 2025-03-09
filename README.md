@@ -16,6 +16,7 @@ Architecture:
 4. The Lambda function will run the script to install the pgvector extension on the Aurora PostgreSQL database. This lambda function currently only supports the [psycogp3](https://www.psycopg.org/psycopg3/) driver.
 
 ## Features
+
 - Idempotent extension installation with transactional locking
 - Automated pgvector extension installation on Aurora PostgreSQL
 - Secure API endpoint with Lambda authorizer
@@ -50,9 +51,9 @@ I assumed that you deployed [VPC](https://github.com/OpenWorkspace-o1/aws-vpc) a
 
 ```env
 # Application Configuration
-APP_NAME=your-aurora-pgvector-serverless
-CDK_DEPLOY_REGION=eu-west-1
-ENVIRONMENT=development
+APP_NAME=aws-aurora-pgvector-extension-creator
+CDK_DEPLOY_REGION=ap-southeast-1
+ENVIRONMENT=development # development, production, staging
 OWNER=your-team-name
 
 # API Configuration
@@ -60,9 +61,9 @@ API_AUTHORIZATION_SECRET_KEY=your-secret-key
 ALLOW_ORIGINS=*
 
 # Aurora PostgreSQL Configuration
-RDS_USERNAME=postgres
+RDS_USERNAME=your_db_user_name
 RDS_PASSWORD=your_db_password
-RDS_DATABASE_NAME=postgres
+RDS_DATABASE_NAME=your_db_name
 RDS_PORT=5432
 RDS_HOST=your-aurora-cluster-endpoint
 RDS_SECURITY_GROUP_ID=sg-xxxxxxxx
