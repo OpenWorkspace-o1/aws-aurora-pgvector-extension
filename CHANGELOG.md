@@ -1,3 +1,11 @@
+## 2025-03-09 [PR#19](https://github.com/OpenWorkspace-o1/aws-aurora-pgvector-extension-creator/pull/19)
+
+### Updated
+- Upgraded `esbuild` from `0.24.2` to `0.25.0` in `api-key-authorizer` lambda.
+- Updated `@aws-lambda-powertools/logger` from `^2.13.1` to `^2.16.0` and `@aws-sdk/client-secrets-manager` from `^3.738.0` to `^3.758.0`.
+- Bumped `uuid` dependency from `^11.0.5` to `^11.1.0`.
+- Incremented `api-key-authorizer-lambda` version from `0.0.2` to `0.0.3`.
+
 ## 2025-03-09 [PR#17](https://github.com/OpenWorkspace-o1/aws-aurora-pgvector-extension-creator/pull/17)
 
 ### Updated
