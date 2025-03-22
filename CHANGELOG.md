@@ -1,3 +1,10 @@
+## 2025-03-22 [PR#23](https://github.com/OpenWorkspace-o1/aws-ow-aurora-pgvector-serverless/pull/23)
+
+### Updated
+- Upgraded `aws-cdk` from `2.1003.0` to `2.1005.0`, `aws-cdk-lib` from `2.182.0` to `2.185.0`, and `cdk-nag` from `2.35.41` to `2.35.52`.
+- Updated `@types/node` from `22.13.10` to `22.13.11`.
+- Bumped package version from `0.1.5` to `0.1.6`.
+
 ## 2025-03-09 [PR#19](https://github.com/OpenWorkspace-o1/aws-aurora-pgvector-extension-creator/pull/19)
 
 ### Updated
