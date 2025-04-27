@@ -76,7 +76,7 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
                 minify: true,
                 sourceMap: true,
                 sourcesContent: false,
-                esbuildVersion: '0.25.1',
+                esbuildVersion: '0.25.3',
                 target: 'ES2022',
                 format: OutputFormat.ESM,
                 forceDockerBundling: true,
