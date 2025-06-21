@@ -31,7 +31,7 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
         super(scope, id, props);
 
         // Create KMS Key for encryption with automatic rotation
-        const kmsKey = new kms.Key(this, `${props.resourcePrefix}-kmsKeyForApiAuthSecret`, {
+        const kmsKeyForApiAuthSecret = new kms.Key(this, `${props.resourcePrefix}-kmsKeyForApiAuthSecret`, {
             enabled: true,
             enableKeyRotation: true,
             rotationPeriod: Duration.days(90),
@@ -43,7 +43,7 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
         const apiAuthSecret = new secretsmanager.Secret(this, `${props.resourcePrefix}-apiAuthSecret`, {
             description: 'API Authorization Secret Key',
             secretStringValue: SecretValue.unsafePlainText(props.apiSecretKey),
-            encryptionKey: kmsKey,
+            encryptionKey: kmsKeyForApiAuthSecret,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
@@ -54,6 +54,9 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
             ],
         });
         lambdaRole.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
+
+        // Grant the Lambda function permission to read the secret
+        apiAuthSecret.grantRead(lambdaRole);
 
         // Create the pre-hook Lambda function (Authorizer)
         const apiKeyAuthorizerLambda = new NodejsFunction(this, `${props.resourcePrefix}-apiKeyAuthorizerLambda`, {
@@ -71,12 +74,12 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
             environment: {
                 API_AUTH_SECRET_NAME: apiAuthSecret.secretName,
             },
-            memorySize: 1024,
+            memorySize: 512,
             bundling: {
                 minify: true,
                 sourceMap: true,
                 sourcesContent: false,
-                esbuildVersion: '0.25.3',
+                esbuildVersion: '0.25.5',
                 target: 'ES2022',
                 format: OutputFormat.ESM,
                 forceDockerBundling: true,
@@ -87,11 +90,8 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
             description: 'This is lambda function to do custom authorization based on $request.header.Authorization key.'
         });
 
-        // Grant the Lambda function permission to read the secret
-        apiAuthSecret.grantRead(apiKeyAuthorizerLambda);
-
         // Grant Lambda permission to decrypt using KMS key
-        kmsKey.grantDecrypt(apiKeyAuthorizerLambda);
+        kmsKeyForApiAuthSecret.grantDecrypt(apiKeyAuthorizerLambda);
 
         // Create the Lambda authorizer
         const authorizer = new HttpLambdaAuthorizer('lambdaAuthorizer', apiKeyAuthorizerLambda, {

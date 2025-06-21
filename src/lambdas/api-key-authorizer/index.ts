@@ -23,13 +23,13 @@ const getSecret = async (): Promise<string> => {
     }
     logger.info('API_AUTH_SECRET_NAME', { secretName });
 
-    const client = new SecretsManager({
+    const secretsManagerClient = new SecretsManager({
         maxAttempts: 3,
         retryMode: 'standard'
     });
 
     try {
-        const response = await client.getSecretValue({ SecretId: secretName });
+        const response = await secretsManagerClient.getSecretValue({ SecretId: secretName });
         if (!response.SecretString) {
             throw new Error('Secret value is empty');
         }
