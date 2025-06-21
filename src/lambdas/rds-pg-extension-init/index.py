@@ -111,6 +111,7 @@ def _connection_string_from_db_params(
     return f"postgresql+{driver}://{user}:{password}@{host}:{port}/{database}"
 
 
+@LOGGER.inject_lambda_context
 def handler(event, context):
     """AWS Lambda entry point for initializing PostgreSQL vector extension in RDS Aurora.
 
