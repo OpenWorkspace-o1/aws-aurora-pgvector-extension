@@ -10,12 +10,26 @@ interface SecretCache {
     timestamp: number;
 }
 
+/**
+ * In-memory cache for the secret with a Time-To-Live (TTL).
+ * @type {SecretCache}
+ */
 // Cache secret with TTL
 const secretCache: SecretCache = {
     value: null,
     timestamp: 0
 };
 
+/**
+ * Retrieves a secret value from AWS Secrets Manager.
+ *
+ * It reads the secret name from the `API_AUTH_SECRET_NAME` environment variable.
+ * It uses the AWS SDK v3 `SecretsManager` client with a standard retry mode.
+ *
+ * @returns {Promise<string>} A promise that resolves to the secret string.
+ * @throws {Error} Throws an error if the `API_AUTH_SECRET_NAME` environment variable is not set,
+ * if the retrieved secret value is empty, or if any other error occurs during the API call to Secrets Manager.
+ */
 const getSecret = async (): Promise<string> => {
     const secretName = process.env.API_AUTH_SECRET_NAME;
     if (!secretName) {
@@ -40,6 +54,17 @@ const getSecret = async (): Promise<string> => {
     }
 };
 
+/**
+ * Retrieves the secret from a local in-memory cache.
+ *
+ * If the secret is not in the cache or has expired (TTL of 5 minutes),
+ * it fetches the secret from AWS Secrets Manager using {@link getSecret} and updates the cache.
+ * It implements a retry mechanism (3 attempts) for fetching the secret. If retries fail
+ * but an old cached value exists, it will return the old value.
+ *
+ * @returns {Promise<string>} A promise that resolves to the secret string.
+ * @throws {Error} Throws an error if fetching the secret fails after all retries and the cache is empty.
+ */
 const getCachedSecret = async (): Promise<string> => {
     const now = Date.now();
     // TTL 5 mins
@@ -67,6 +92,16 @@ const getCachedSecret = async (): Promise<string> => {
     return secretCache.value!;
 };
 
+/**
+ * Lambda handler for an API Gateway request-based authorizer.
+ *
+ * It validates the 'Authorization' header from the incoming request against a secret token
+ * retrieved via {@link getCachedSecret}. For security, it uses a timing-safe comparison
+ * to prevent timing attacks.
+ *
+ * @param {APIGatewayRequestAuthorizerEvent} event The event object from API Gateway, containing request details.
+ * @returns {Promise<{ isAuthorized: boolean }>} A promise that resolves to an object indicating if the request is authorized.
+ */
 export const handler = async (event: APIGatewayRequestAuthorizerEvent): Promise<{ isAuthorized: boolean }> => {
     const response = {
         isAuthorized: false
