@@ -98,7 +98,7 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
         lambdaRole.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
 
         // Create KMS Key for encryption with automatic rotation
-        const kmsKey = new kms.Key(this, 'KmsKeyForDbPassword', {
+        const environmentEncryptionKmsKey = new kms.Key(this, `${props.resourcePrefix}-environmentEncryptionKmsKey`, {
             enabled: true,
             enableKeyRotation: true,
             rotationPeriod: Duration.days(90),
@@ -126,7 +126,7 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
                 DB_PORT: props.rdsPort,
                 DB_PASSWORD: props.rdsPassword,
             },
-            environmentEncryption: kmsKey,
+            environmentEncryption: environmentEncryptionKmsKey,
             role: lambdaRole,
             vpc: vpc,
             securityGroups: [lambdaFnSecGrp],
