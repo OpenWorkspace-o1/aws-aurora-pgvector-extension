@@ -1,16 +1,16 @@
 {
     "name": "api-key-authorizer-lambda",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "dependencies": {
-        "@aws-lambda-powertools/logger": "^2.19.0",
-        "@aws-sdk/client-secrets-manager": "^3.797.0",
-        "@types/aws-lambda": "^8.10.149",
+        "@aws-lambda-powertools/logger": "^2.22.0",
+        "@aws-sdk/client-secrets-manager": "^3.830.0",
+        "@types/aws-lambda": "^8.10.150",
         "http-status-codes": "^2.3.0",
         "util": "^0.12.5",
         "uuid": "^11.1.0"
     },
     "devDependencies": {
         "@types/uuid": "^10.0.0",
-        "esbuild": "^0.25.3"
+        "esbuild": "^0.25.5"
     }
 }
