@@ -1,7 +1,6 @@
 import os
 from aws_lambda_powertools import Logger
-from sqlalchemy import Engine, create_engine
-import sqlalchemy
+from langchain_postgres import PGEngine
 
 LOGGER = Logger()
 
@@ -17,6 +16,7 @@ def _check_database_env_vars():
         "DB_HOST": os.environ.get("DB_HOST"),
         "DB_PORT": os.environ.get("DB_PORT"),
         "DB_PASSWORD": os.environ.get("DB_PASSWORD"),
+        "EMBEDDING_MODEL_DIMENSIONS": os.environ.get("EMBEDDING_MODEL_DIMENSIONS")
     }
 
     present_vars = [name for name, value in db_vars.items() if value]
@@ -27,57 +27,6 @@ def _check_database_env_vars():
             f"Some database credentials missing. Present: {present_vars}, Missing: {missing_vars}"
         )
     return db_vars
-
-def _create_vector_extension(db_engine: Engine) -> None:
-    """Create and update vector extension in PostgreSQL database with transactional safety.
-
-    Uses advisory locks to prevent concurrent extension updates while allowing regular
-    database operations. Ensures extension is either created at latest version or updated
-    if outdated.
-
-    Args:
-        db_engine: SQLAlchemy engine instance connected to target database
-
-    Raises:
-        Exception: If extension creation/update fails, with original SQL error message
-        OperationalError: If connection to database is lost during execution
-
-    Note:
-        Uses transaction-level advisory lock (pg_advisory_xact_lock) that automatically
-        releases when transaction completes. Lock ID derived from hash of 'vector' string.
-    """
-    try:
-        with db_engine.connect() as conn:
-            statement = sqlalchemy.text("""
-                DO $$
-                BEGIN
-                    -- Only proceed if vector extension doesn't exist or needs update
-                    IF NOT EXISTS (
-                        SELECT 1 FROM pg_extension WHERE extname = 'vector'
-                    ) OR (
-                        SELECT extversion FROM pg_extension WHERE extname = 'vector'
-                    ) < (
-                        SELECT default_version FROM pg_available_extensions
-                        WHERE name = 'vector'
-                    ) THEN
-
-                        -- Use cluster-wide lock number to prevent concurrent migrations
-                        PERFORM pg_advisory_xact_lock(pg_catalog.hashtext('vector'));
-
-                        CREATE EXTENSION IF NOT EXISTS vector;
-                        ALTER EXTENSION vector UPDATE;
-                    END IF;
-                EXCEPTION WHEN OTHERS THEN
-                    RAISE LOG 'Vector extension migration failed: %', SQLERRM;
-                    RAISE;
-                END $$;
-            """)
-            conn.execute(statement)
-            conn.commit()
-            LOGGER.info("Vector extension created successfully.")
-    except Exception as e:
-        LOGGER.error(f"Failed to create vector extension: {e}")
-        raise Exception(f"Failed to create vector extension: {e}") from e
 
 def _connection_string_from_db_params(
         driver: str,
@@ -112,7 +61,7 @@ def _connection_string_from_db_params(
 
 
 @LOGGER.inject_lambda_context
-def handler(event, context):
+async def handler(event, context):
     """AWS Lambda entry point for initializing PostgreSQL vector extension in RDS Aurora.
 
     Expects database connection parameters in environment variables:
@@ -133,20 +82,30 @@ def handler(event, context):
         PGVECTOR_DRIVER: Optional override for database driver (default: 'psycopg')
     """
 
-    # Check database environment variables consistency
-    db_vars = _check_database_env_vars()
+    try:
+        # Check database environment variables consistency
+        db_vars = _check_database_env_vars()
 
-    conn = _connection_string_from_db_params(
-        driver=os.environ.get("PGVECTOR_DRIVER", "psycopg"),
-        database=db_vars["DB_NAME"],
-        user=db_vars["DB_USER"],
-        password=db_vars["DB_PASSWORD"],
-        host=db_vars["DB_HOST"],
-        port=db_vars["DB_PORT"],
-    )
+        connection_string = _connection_string_from_db_params(
+            driver=os.environ.get("PGVECTOR_DRIVER", "psycopg"),
+            database=db_vars["DB_NAME"],
+            user=db_vars["DB_USER"],
+            password=db_vars["DB_PASSWORD"],
+            host=db_vars["DB_HOST"],
+            port=db_vars["DB_PORT"],
+        )
 
-    db_engine = create_engine(url=conn, **{})
+        engine = PGEngine.from_connection_string(url=connection_string)
+        embedding_dimensions = int(db_vars["EMBEDDING_MODEL_DIMENSIONS"])
+        table_name = db_vars["TABLE_NAME"]
 
-    _create_vector_extension(db_engine)
+        await engine.ainit_vectorstore_table(
+            table_name=table_name,
+            vector_size=embedding_dimensions,
+        )
 
-    return {"statusCode": 200, "body": "Successfully created vector extension."}
+        LOGGER.info(f"Successfully created vector table with pgvector extension.")
+        return {"statusCode": 200, "body": "Successfully created vector table with pgvector extension."}
+    except Exception as e:
+        LOGGER.error(f"Failed to create vector table with pgvector extension: {e}")
+        return {"statusCode": 500, "body": "Failed to create vector table with pgvector extension."}
