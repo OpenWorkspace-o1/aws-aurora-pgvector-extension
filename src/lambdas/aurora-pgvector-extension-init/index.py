@@ -202,7 +202,7 @@ async def handler(event, context):
         db_vars = _check_database_env_vars()
 
         connection_string = _connection_string_from_db_params(
-            driver=os.environ.get("PGVECTOR_DRIVER", "psycopg"),
+            driver=db_vars["PGVECTOR_DRIVER"],
             database=db_vars["DB_NAME"],
             user=db_vars["DB_USER"],
             password=db_vars["DB_PASSWORD"],
