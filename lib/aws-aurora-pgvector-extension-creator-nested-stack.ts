@@ -25,6 +25,10 @@ export interface AwsAuroraPgvectorExtensionCreatorNestedStackProps extends Neste
     readonly rdsSecGrpId: string;
     /** Architecture of the Aurora PostgreSQL instance */
     readonly lambdaArchitecture: Architecture;
+    /** Driver for the Aurora PostgreSQL instance */
+    readonly pgvectorDriver: string;
+    /** Dimensions of the embedding model */
+    readonly embeddingModelDimensions: string;
 }
 
 export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
@@ -125,6 +129,8 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
                 DB_HOST: props.rdsHost,
                 DB_PORT: props.rdsPort,
                 DB_PASSWORD: props.rdsPassword,
+                PGVECTOR_DRIVER: props.pgvectorDriver,
+                EMBEDDING_MODEL_DIMENSIONS: props.embeddingModelDimensions,
             },
             environmentEncryption: environmentEncryptionKmsKey,
             role: lambdaRole,

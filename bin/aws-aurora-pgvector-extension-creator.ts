@@ -36,6 +36,8 @@ checkEnvVariables('APP_NAME',
     'ARCHITECTURE',
     'API_AUTHORIZATION_SECRET_KEY',
     'ALLOW_ORIGINS',
+    'PGVECTOR_DRIVER',
+    'EMBEDDING_MODEL_DIMENSIONS',
 );
 
 const { CDK_DEFAULT_ACCOUNT: account } = process.env;

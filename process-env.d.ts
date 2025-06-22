@@ -19,5 +19,7 @@ declare module NodeJS {
         ARCHITECTURE: string;
         API_AUTHORIZATION_SECRET_KEY: string;
         ALLOW_ORIGINS: string;
+        PGVECTOR_DRIVER: string;
+        EMBEDDING_MODEL_DIMENSIONS: string;
     }
 }
