@@ -10,6 +10,8 @@ export class AwsAuroraPgvectorExtensionCreatorStack extends cdk.Stack {
 
     const auroraPgvectorExtensionCreatorNestedStack = new AwsAuroraPgvectorExtensionCreatorNestedStack(this, `${props.resourcePrefix}-auroraPgvectorExtensionCreatorNestedStack`, {
       ...props,
+      pgvectorDriver: process.env.PGVECTOR_DRIVER!,
+      embeddingModelDimensions: process.env.EMBEDDING_MODEL_DIMENSIONS!,
     });
 
     const auroraPgvectorExtensionEndpointNestedStack = new AwsAuroraPgvectorExtensionEndpointNestedStack(this, `${props.resourcePrefix}-auroraPgvectorExtensionEndpointNestedStack`, {

@@ -1,0 +1,9 @@
+{
+  "headers": {
+    "x-table-name": "document_embeddings",
+    "Content-Type": "application/json"
+  },
+  "body": "{}",
+  "httpMethod": "POST",
+  "path": "/init-vector-table"
+}

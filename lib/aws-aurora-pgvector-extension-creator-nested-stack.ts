@@ -25,6 +25,10 @@ export interface AwsAuroraPgvectorExtensionCreatorNestedStackProps extends Neste
     readonly rdsSecGrpId: string;
     /** Architecture of the Aurora PostgreSQL instance */
     readonly lambdaArchitecture: Architecture;
+    /** Driver for the Aurora PostgreSQL instance */
+    readonly pgvectorDriver: string;
+    /** Dimensions of the embedding model */
+    readonly embeddingModelDimensions: string;
 }
 
 export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
@@ -109,7 +113,7 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
         // Function to initialize the pgvector extension on the RDS instance
         this.rdsPgExtensionInitFn = new PythonFunction(this, `${props.resourcePrefix}-rdsPgExtensionInitFn`, {
             runtime: cdk.aws_lambda.Runtime.PYTHON_3_13,
-            entry: path.join(__dirname, '../src/lambdas/rds-pg-extension-init'),
+            entry: path.join(__dirname, '../src/lambdas/aurora-pgvector-extension-init'),
             handler: "handler",
             architecture: props.lambdaArchitecture,
             memorySize: 1024,
@@ -125,6 +129,8 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
                 DB_HOST: props.rdsHost,
                 DB_PORT: props.rdsPort,
                 DB_PASSWORD: props.rdsPassword,
+                PGVECTOR_DRIVER: props.pgvectorDriver,
+                EMBEDDING_MODEL_DIMENSIONS: props.embeddingModelDimensions,
             },
             environmentEncryption: environmentEncryptionKmsKey,
             role: lambdaRole,
