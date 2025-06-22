@@ -113,10 +113,12 @@ After successful deployment, the stack will output:
 - API endpoint requires authentication via the `Authorization` header with the configured secret key
 
 Example usage:
+
 ```bash
 curl -X POST \
   -H "Authorization: your-secret-key" \
-  https://<api-gateway-endpoint>/activate
+  -H "x-table-name: your_table_name" \
+  https://<api-gateway-endpoint>/<api_stage>/init-vector-store-table
 ```
 
 ## Security
