@@ -58,6 +58,9 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
         // Grant the Lambda function permission to read the secret
         apiAuthSecret.grantRead(lambdaRole);
 
+        // Grant Lambda permission to decrypt using KMS key
+        kmsKeyForApiAuthSecret.grantDecrypt(lambdaRole);
+
         // Create the pre-hook Lambda function (Authorizer)
         const apiKeyAuthorizerLambda = new NodejsFunction(this, `${props.resourcePrefix}-apiKeyAuthorizerLambda`, {
             runtime: cdk.aws_lambda.Runtime.NODEJS_22_X,
@@ -90,20 +93,17 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
             description: 'This is lambda function to do custom authorization based on $request.header.Authorization key.'
         });
 
-        // Grant Lambda permission to decrypt using KMS key
-        kmsKeyForApiAuthSecret.grantDecrypt(apiKeyAuthorizerLambda);
-
         // Create the Lambda authorizer
-        const authorizer = new HttpLambdaAuthorizer('lambdaAuthorizer', apiKeyAuthorizerLambda, {
-            authorizerName: `${props.resourcePrefix}-authorizer`,
+        const apiKeyAuthorizer = new HttpLambdaAuthorizer(`${props.resourcePrefix}-apiKeyAuthorizer`, apiKeyAuthorizerLambda, {
+            authorizerName: `${props.resourcePrefix}-apiKeyAuthorizer`,
             identitySource: ['$request.header.Authorization'],
             responseTypes: [HttpLambdaResponseType.SIMPLE],
         });
 
         // Create the HTTP API
-        const httpApi = new apigatewayv2.HttpApi(this, `${props.resourcePrefix}-httpApi`, {
-            apiName: `${props.resourcePrefix}-httpApi`,
-            description: 'HTTP API for CX Web Explorer Service.',
+        const pgVectorHttpApi = new apigatewayv2.HttpApi(this, `${props.resourcePrefix}-pgVectorHttpApi`, {
+            apiName: `${props.resourcePrefix}-pgVectorHttpApi`,
+            description: 'HTTP API for PGVector extensions.',
             createDefaultStage: false,
             corsPreflight: {
                 allowHeaders: ['Content-Type', 'Authorization'],
@@ -116,20 +116,20 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
         // Create API Stage
         this.apiStage = props.deployEnvironment.replace(/[^a-zA-Z0-9-]/g, '-');
         new apigatewayv2.HttpStage(this, `${props.resourcePrefix}-apiStage`, {
-            httpApi: httpApi,
+            httpApi: pgVectorHttpApi,
             stageName: this.apiStage,
             description: `${props.deployEnvironment} API Stage.`,
             autoDeploy: true,
         });
 
         // Add routes with the authorizer
-        httpApi.addRoutes({
+        pgVectorHttpApi.addRoutes({
             path: '/activate',
             methods: [apigatewayv2.HttpMethod.POST],
             integration: new HttpLambdaIntegration(`${props.resourcePrefix}-mainLambda`, props.rdsPgExtensionInitFn),
-            authorizer: authorizer,
+            authorizer: apiKeyAuthorizer,
         });
 
-        this.httpApiUrl = `${httpApi.apiEndpoint}`;
+        this.httpApiUrl = `${pgVectorHttpApi.apiEndpoint}`;
     }
 }
