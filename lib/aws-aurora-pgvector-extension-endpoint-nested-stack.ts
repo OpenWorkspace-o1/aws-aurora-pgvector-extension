@@ -124,7 +124,7 @@ export class AwsAuroraPgvectorExtensionEndpointNestedStack extends NestedStack {
 
         // Add routes with the authorizer
         pgVectorHttpApi.addRoutes({
-            path: '/activate',
+            path: '/init-vector-store-table',
             methods: [apigatewayv2.HttpMethod.POST],
             integration: new HttpLambdaIntegration(`${props.resourcePrefix}-mainLambda`, props.rdsPgExtensionInitFn),
             authorizer: apiKeyAuthorizer,
