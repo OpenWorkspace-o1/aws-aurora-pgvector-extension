@@ -122,7 +122,8 @@ def _check_database_env_vars():
         "DB_HOST": os.environ.get("DB_HOST"),
         "DB_PORT": os.environ.get("DB_PORT"),
         "DB_PASSWORD": os.environ.get("DB_PASSWORD"),
-        "EMBEDDING_MODEL_DIMENSIONS": os.environ.get("EMBEDDING_MODEL_DIMENSIONS")
+        "EMBEDDING_MODEL_DIMENSIONS": os.environ.get("EMBEDDING_MODEL_DIMENSIONS"),
+        "PGVECTOR_DRIVER": os.environ.get("PGVECTOR_DRIVER")
     }
 
     present_vars = [name for name, value in db_vars.items() if value]
