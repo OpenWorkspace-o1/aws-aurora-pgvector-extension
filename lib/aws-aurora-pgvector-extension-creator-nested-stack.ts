@@ -114,6 +114,7 @@ export class AwsAuroraPgvectorExtensionCreatorNestedStack extends NestedStack {
         this.rdsPgExtensionInitFn = new PythonFunction(this, `${props.resourcePrefix}-rdsPgExtensionInitFn`, {
             runtime: cdk.aws_lambda.Runtime.PYTHON_3_13,
             entry: path.join(__dirname, '../src/lambdas/aurora-pgvector-extension-init'),
+            index: "index.py",
             handler: "handler",
             architecture: props.lambdaArchitecture,
             memorySize: 1024,
