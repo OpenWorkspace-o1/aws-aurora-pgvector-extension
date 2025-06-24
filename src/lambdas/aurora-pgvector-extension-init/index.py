@@ -4,7 +4,7 @@ from aws_lambda_powertools import Logger
 from aws_lambda_powertools.utilities.parser import parse_event_headers
 from aws_lambda_powertools.utilities.validation import validate_event_headers
 from aws_lambda_powertools.utilities.validation.exceptions import SchemaValidationError
-from langchain_postgres import PGEngine
+from .engine import PGEngine
 
 LOGGER = Logger()
 
