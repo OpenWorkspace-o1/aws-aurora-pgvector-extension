@@ -1,6 +1,6 @@
 {
   "name": "aws-aurora-pgvector-extension-creator",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "bin": {
     "aws-aurora-pgvector-extension-creator": "bin/aws-aurora-pgvector-extension-creator.js"
   },
@@ -25,7 +25,7 @@
   "dependencies": {
     "@aws-cdk/aws-lambda-python-alpha": "^2.202.0-alpha.0",
     "aws-cdk-lib": "2.202.0",
-    "cdk-nag": "^2.36.23",
+    "cdk-nag": "^2.36.24",
     "constructs": "^10.4.2",
     "dotenv": "^16.5.0"
   },
